@@ -1,14 +1,17 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowPathIcon, SparklesIcon } from '@heroicons/react/24/outline';
+import { ArrowPathIcon, SparklesIcon, ArrowDownTrayIcon, ShareIcon } from '@heroicons/react/24/outline';
+import Image from 'next/image';
 
 interface RemixResult {
   title: string;
   imagePrompt: string;
   description: string;
   hashtags: string[];
+  imageUrl: string | null;
+  imageError?: string;
 }
 
 export default function Home() {
@@ -17,41 +20,75 @@ export default function Home() {
   const [results, setResults] = useState<RemixResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [isMounted, setIsMounted] = useState(false);
 
-  const handleRemix = async () => {
-    if (!boardUrl || !twist) {
-      setError('Please provide both a Pinterest board URL and your creative twist');
-      return;
-    }
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
+  const handleRemix = async (e: React.FormEvent) => {
+    e.preventDefault();
     setLoading(true);
-    setError('');
+    setError(null);
+    setResults([]);
 
     try {
       const response = await fetch('/api/remix', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ boardUrl, twistPrompt: twist }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          boardUrl,
+          twistPrompt: twist,
+        }),
       });
 
       const data = await response.json();
+      console.log('API Response:', data);
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to remix board');
+        throw new Error(data.details || data.error || 'Failed to remix board');
       }
 
       if (!data.pins || !Array.isArray(data.pins)) {
-        throw new Error('Invalid response format from server');
+        throw new Error('Invalid response format: missing pins array');
       }
 
       setResults(data.pins);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
-      console.error('Error:', err);
+      console.error('Remix error:', err);
+      setError(err instanceof Error ? err.message : 'Failed to remix board');
     } finally {
       setLoading(false);
     }
   };
+
+  const downloadImage = async (imageUrl: string, title: string) => {
+    try {
+      const response = await fetch(imageUrl);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${title.toLowerCase().replace(/\s+/g, '-')}.png`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error('Error downloading image:', error);
+    }
+  };
+
+  const shareToPinterest = (imageUrl: string, title: string, description: string) => {
+    const pinterestUrl = `https://pinterest.com/pin/create/button/?url=${encodeURIComponent(window.location.href)}&media=${encodeURIComponent(imageUrl)}&description=${encodeURIComponent(`${title}\n\n${description}`)}`;
+    window.open(pinterestUrl, '_blank');
+  };
+
+  if (!isMounted) {
+    return null; // or a loading spinner
+  }
 
   return (
     <main className="container mx-auto px-4 py-8 max-w-4xl">
@@ -129,26 +166,62 @@ export default function Home() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
-                className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6"
+                className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden"
               >
-                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                  {result.title}
-                </h3>
-                <p className="text-gray-600 dark:text-gray-300 mb-4">
-                  {result.description}
-                </p>
-                <div className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-                  {result.imagePrompt}
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {result.hashtags.map((tag, i) => (
-                    <span
-                      key={i}
-                      className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded-full text-sm text-gray-600 dark:text-gray-300"
-                    >
-                      {tag}
-                    </span>
-                  ))}
+                {result.imageUrl ? (
+                  <div className="relative aspect-square w-full">
+                    <Image
+                      src={result.imageUrl}
+                      alt={result.title}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                ) : (
+                  <div className="aspect-square w-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+                    <p className="text-gray-500 dark:text-gray-400">
+                      {result.imageError || 'Loading image...'}
+                    </p>
+                  </div>
+                )}
+                <div className="p-6">
+                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                    {result.title}
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-300 mb-4">
+                    {result.description}
+                  </p>
+                  <div className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                    {result.imagePrompt}
+                  </div>
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {result.hashtags.map((tag, i) => (
+                      <span
+                        key={i}
+                        className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded-full text-sm text-gray-600 dark:text-gray-300"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                  {result.imageUrl && (
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => downloadImage(result.imageUrl!, result.title)}
+                        className="flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                      >
+                        <ArrowDownTrayIcon className="w-5 h-5" />
+                        Download
+                      </button>
+                      <button
+                        onClick={() => shareToPinterest(result.imageUrl!, result.title, result.description)}
+                        className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                      >
+                        <ShareIcon className="w-5 h-5" />
+                        Share to Pinterest
+                      </button>
+                    </div>
+                  )}
                 </div>
               </motion.div>
             ))}

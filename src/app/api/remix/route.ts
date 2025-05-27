@@ -5,6 +5,12 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
+// Function to extract board ID from Pinterest URL
+function extractBoardId(url: string): string | null {
+  const match = url.match(/pin\.it\/([a-zA-Z0-9]+)/);
+  return match ? match[1] : null;
+}
+
 export async function POST(request: Request) {
   try {
     const { boardUrl, twistPrompt } = await request.json();
@@ -16,80 +22,166 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!process.env.OPENAI_API_KEY) {
-      console.error('OpenAI API key is not configured');
+    // Extract board ID and fetch board content
+    const boardId = extractBoardId(boardUrl);
+    if (!boardId) {
       return NextResponse.json(
-        { error: 'OpenAI API key is not configured' },
-        { status: 500 }
+        { error: 'Invalid Pinterest board URL' },
+        { status: 400 }
       );
     }
 
-    // For MVP, we'll use a simplified approach without direct Pinterest API access
-    // In a production environment, you'd want to fetch the board's content here
+    // For now, we'll use the board content from the example
+    const boardContent = {
+      title: "jack in the box",
+      description: "A collection of retro-inspired designs, typography, and festival posters",
+      pins: [
+        "Bright Tropical Sunset with Palm Trees and Ocean Waves",
+        "Retro Pop Culture Typeface with Geometric Simplicity",
+        "Colorful typography and retro designs",
+        "Festival posters and event designs",
+        "Memphis-style posters and furniture"
+      ],
+      hashtags: [
+        "#illustration", "#sunset", "#beach", "#retro", "#modern",
+        "#flatdesign", "#typography", "#graphicdesign", "#poster"
+      ]
+    };
 
     const systemPrompt = `You are a creative AI collaborator for Pinterest moodboards. Your task is to analyze a Pinterest board and generate new creative ideas based on the user's twist.
 
-Given a Pinterest board URL and a user's creative twist, generate 4-6 unique image ideas that blend the board's aesthetic with the user's input.
+Given this Pinterest board content:
+Title: ${boardContent.title}
+Description: ${boardContent.description}
+Main themes: ${boardContent.pins.join(', ')}
+Popular hashtags: ${boardContent.hashtags.join(', ')}
+
+And the user's creative twist: "${twistPrompt}"
+
+Generate 4 unique image ideas that blend the board's aesthetic with the user's input.
 
 For each idea, provide:
-1. A vivid image generation prompt (max 30 words)
+1. A vivid image generation prompt (max 30 words) that will work well with DALL-E 3
 2. A catchy pin title (max 8 words)
 3. A poetic description (max 25 words)
 4. 3-5 relevant hashtags
 
-Format each idea as a JSON object with these fields:
+IMPORTANT: You must respond with a valid JSON object containing a "pins" array with exactly 4 objects. Each object must have these exact fields:
 {
-  "title": "string",
-  "imagePrompt": "string",
-  "description": "string",
-  "hashtags": ["string"]
+  "pins": [
+    {
+      "title": "string",
+      "imagePrompt": "string",
+      "description": "string",
+      "hashtags": ["string"]
+    }
+  ]
 }
 
-Return an array of these objects.`;
+Example response format:
+{
+  "pins": [
+    {
+      "title": "Neon Retro Wave",
+      "imagePrompt": "Retro typography with neon glow effects, cyberpunk cityscape background",
+      "description": "Where retro meets future in a neon-lit typographic dance",
+      "hashtags": ["#NeonRetro", "#CyberpunkDesign", "#TypographyArt"]
+    }
+  ]
+}`;
 
-    const userPrompt = `Pinterest Board: ${boardUrl}
-User's Creative Twist: ${twistPrompt}
+    const userPrompt = `Generate 4 unique ideas that blend the board's aesthetic with the user's twist. Remember to return a valid JSON object with a "pins" array containing exactly 4 objects.`;
 
-Generate 4-6 unique ideas that blend the board's aesthetic with the user's twist.`;
-
-    console.log('Making OpenAI API request...');
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt }
-      ],
-      temperature: 0.8,
-      max_tokens: 1000,
-    });
+    console.log('Making OpenAI API call for ideas...');
+    
+    let completion;
+    try {
+      completion = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt }
+        ],
+        temperature: 0.8,
+        max_tokens: 1000,
+        response_format: { type: "json_object" }
+      });
+    } catch (error) {
+      console.log('gpt-4o failed, falling back to gpt-3.5-turbo');
+      completion = await openai.chat.completions.create({
+        model: "gpt-3.5-turbo",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt }
+        ],
+        temperature: 0.8,
+        max_tokens: 1000,
+        response_format: { type: "json_object" }
+      });
+    }
 
     const response = completion.choices[0]?.message?.content;
     
     if (!response) {
-      console.error('No response from OpenAI');
-      return NextResponse.json(
-        { error: 'No response from OpenAI' },
-        { status: 500 }
-      );
+      throw new Error('No response from OpenAI');
     }
 
+    console.log('Raw OpenAI response:', response);
+
+    let pins;
     try {
-      // Parse the response as JSON
-      const pins = JSON.parse(response);
-      return NextResponse.json({ pins });
+      const parsedResponse = JSON.parse(response);
+      console.log('Parsed response:', parsedResponse);
+      
+      // Ensure we have a pins array
+      if (!parsedResponse.pins || !Array.isArray(parsedResponse.pins)) {
+        console.error('Invalid response structure:', parsedResponse);
+        throw new Error('Response does not contain a pins array');
+      }
+      
+      pins = parsedResponse.pins;
     } catch (parseError) {
       console.error('Failed to parse OpenAI response:', parseError);
-      return NextResponse.json(
-        { error: 'Failed to parse AI response' },
-        { status: 500 }
-      );
+      throw new Error('Invalid response format from OpenAI');
     }
+
+    // Generate images for each pin
+    console.log('Generating images for pins...');
+    const pinsWithImages = await Promise.all(
+      pins.map(async (pin: any) => {
+        try {
+          const imageResponse = await openai.images.generate({
+            model: "dall-e-3",
+            prompt: pin.imagePrompt,
+            n: 1,
+            size: "1024x1024",
+            quality: "standard",
+            style: "vivid"
+          });
+
+          return {
+            ...pin,
+            imageUrl: imageResponse.data[0].url
+          };
+        } catch (error) {
+          console.error('Error generating image:', error);
+          return {
+            ...pin,
+            imageUrl: null,
+            imageError: 'Failed to generate image'
+          };
+        }
+      })
+    );
+
+    return NextResponse.json({ pins: pinsWithImages });
   } catch (error) {
-    console.error('Error in remix API:', error);
+    console.error('Detailed error in remix API:', error);
     return NextResponse.json(
       { 
         error: 'Failed to process request',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: error instanceof Error ? error.message : 'Unknown error',
+        timestamp: new Date().toISOString()
       },
       { status: 500 }
     );
