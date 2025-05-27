@@ -105,7 +105,7 @@ export default function Home() {
   };
 
   const shareToPinterest = (imageUrl: string, title: string, description: string) => {
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://your-squarespace-site.com';
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.joebenavente.com';
     const pinterestUrl = `https://pinterest.com/pin/create/button/?url=${encodeURIComponent(baseUrl)}&media=${encodeURIComponent(imageUrl)}&description=${encodeURIComponent(`${title}\n\n${description}`)}`;
     window.open(pinterestUrl, '_blank');
   };
@@ -115,24 +115,24 @@ export default function Home() {
   }
 
   return (
-    <main className="container mx-auto px-4 py-8 max-w-7xl">
+    <main className="container mx-auto px-4 py-8 max-w-3xl">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="text-center mb-12"
       >
-        <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-          CollabMoodboard.AI
+        <h1 className="text-4xl font-bold mb-4 text-accent">
+          Pingen
         </h1>
-        <p className="text-gray-600 dark:text-gray-300">
-          Transform your Pinterest boards with AI-powered creative collaboration
+        <p className="text-muted text-lg">
+          Instantly Remix Your Inspiration
         </p>
       </motion.div>
 
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 mb-8">
-        <form onSubmit={handleRemix} className="space-y-4">
+      <div className="card p-8 mb-8">
+        <form onSubmit={handleRemix} className="space-y-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-muted mb-2">
               Pinterest Board URL *
             </label>
             <input
@@ -140,13 +140,12 @@ export default function Home() {
               value={boardUrl}
               onChange={(e) => setBoardUrl(e.target.value)}
               placeholder="https://pin.it/..."
-              className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-muted mb-2">
               Project Goal *
             </label>
             <input
@@ -154,13 +153,12 @@ export default function Home() {
               value={projectGoal}
               onChange={(e) => setProjectGoal(e.target.value)}
               placeholder="e.g., A summer music festival for Gen Z celebrating creative freedom"
-              className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-muted mb-2">
               Creative Twist *
             </label>
             <input
@@ -168,13 +166,12 @@ export default function Home() {
               value={creativeTwist}
               onChange={(e) => setCreativeTwist(e.target.value)}
               placeholder="e.g., Add Memphis-inspired patterns and pastel gradients"
-              className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-muted mb-2">
               Text for Images (Optional)
             </label>
             <input
@@ -182,7 +179,6 @@ export default function Home() {
               value={imageText}
               onChange={(e) => setImageText(e.target.value)}
               placeholder="e.g., Create Your Future Here"
-              className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             />
           </div>
 
@@ -190,7 +186,7 @@ export default function Home() {
             <button
               type="button"
               onClick={() => setShowAdvanced(!showAdvanced)}
-              className="text-sm text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300"
+              className="text-sm text-muted border border-muted rounded-md px-3 py-1 hover:text-foreground hover:border-foreground transition-colors"
             >
               {showAdvanced ? 'Hide Advanced Settings' : 'Show Advanced Settings'}
             </button>
@@ -198,14 +194,14 @@ export default function Home() {
 
           {showAdvanced && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-muted mb-2">
                 Visual Style/Constraints
               </label>
               <textarea
                 value={visualStyle}
                 onChange={(e) => setVisualStyle(e.target.value)}
                 placeholder="e.g., Use bold sans-serif type, pastel gradients, and hand-drawn elements"
-                className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white h-24"
+                className="h-24"
               />
             </div>
           )}
@@ -217,7 +213,7 @@ export default function Home() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 px-6 rounded-lg font-medium hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
+            className="w-full flex items-center justify-center gap-2 primary-button"
           >
             {loading ? (
               <>
@@ -235,19 +231,19 @@ export default function Home() {
       </div>
 
       {results.length > 0 && (
-        <div className="space-y-6">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Your Remixed Ideas</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="space-y-8 mt-12">
+          <h2 className="text-2xl font-bold text-foreground text-center">Your Remixed Ideas</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {results.map((result, index) => (
               <motion.div
                 key={index}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
-                className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden"
+                className="card overflow-hidden flex flex-col"
               >
                 {result.imageUrl ? (
-                  <div className="relative aspect-square w-full">
+                  <div className="relative aspect-square w-full flex-shrink-0">
                     <Image
                       src={result.imageUrl}
                       alt={result.title}
@@ -256,50 +252,39 @@ export default function Home() {
                     />
                   </div>
                 ) : (
-                  <div className="aspect-square w-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
-                    <p className="text-gray-500 dark:text-gray-400">
-                      {result.imageError || 'Loading image...'}
-                    </p>
+                  <div className="aspect-square w-full bg-muted/20 flex items-center justify-center">
+                    <p className="text-muted text-sm">Failed to generate image</p>
                   </div>
                 )}
-                <div className="p-6">
-                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                    {result.title}
-                  </h3>
-                  <p className="text-gray-600 dark:text-gray-300 mb-4">
-                    {result.description}
-                  </p>
-                  <div className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-                    {result.imagePrompt}
-                  </div>
+                <div className="p-4 flex flex-col flex-grow">
+                  <h3 className="font-medium mb-2 text-foreground text-lg leading-tight">{result.title}</h3>
+                  <p className="text-sm text-muted mb-4 flex-grow leading-relaxed">{result.description}</p>
                   <div className="flex flex-wrap gap-2 mb-4">
                     {result.hashtags.map((tag, i) => (
                       <span
                         key={i}
-                        className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded-full text-sm text-gray-600 dark:text-gray-300"
+                        className="text-xs px-2 py-1 rounded-full bg-muted/20 text-muted"
                       >
-                        {tag}
+                        #{tag}
                       </span>
                     ))}
                   </div>
-                  {result.imageUrl && (
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => downloadImage(result.imageUrl!, result.title)}
-                        className="flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-                      >
-                        <ArrowDownTrayIcon className="w-5 h-5" />
-                        Download
-                      </button>
-                      <button
-                        onClick={() => shareToPinterest(result.imageUrl!, result.title, result.description)}
-                        className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-                      >
-                        <ShareIcon className="w-5 h-5" />
-                        Share to Pinterest
-                      </button>
-                    </div>
-                  )}
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => result.imageUrl && downloadImage(result.imageUrl, result.title)}
+                      className="flex-1 flex items-center justify-center gap-1 text-sm"
+                    >
+                      <ArrowDownTrayIcon className="w-4 h-4" />
+                      Download
+                    </button>
+                    <button
+                      onClick={() => result.imageUrl && shareToPinterest(result.imageUrl, result.title, result.description)}
+                      className="flex-1 flex items-center justify-center gap-1 text-sm"
+                    >
+                      <ShareIcon className="w-4 h-4" />
+                      Share
+                    </button>
+                  </div>
                 </div>
               </motion.div>
             ))}
