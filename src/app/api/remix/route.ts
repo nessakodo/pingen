@@ -13,11 +13,11 @@ function extractBoardId(url: string): string | null {
 
 export async function POST(request: Request) {
   try {
-    const { boardUrl, twistPrompt } = await request.json();
+    const { boardUrl, projectGoal, creativeTwist, imageText, visualStyle } = await request.json();
 
-    if (!boardUrl || !twistPrompt) {
+    if (!boardUrl || !projectGoal || !creativeTwist) {
       return NextResponse.json(
-        { error: 'Board URL and twist prompt are required' },
+        { error: 'Board URL, project goal, and creative twist are required' },
         { status: 400 }
       );
     }
@@ -48,7 +48,7 @@ export async function POST(request: Request) {
       ]
     };
 
-    const systemPrompt = `You are a creative AI collaborator for Pinterest moodboards. Your task is to analyze a Pinterest board and generate new creative ideas based on the user's twist.
+    const systemPrompt = `You are a creative AI collaborator for Pinterest moodboards. Your task is to analyze a Pinterest board and generate new creative ideas based on the user's project goals and creative direction.
 
 Given this Pinterest board content:
 Title: ${boardContent.title}
@@ -56,15 +56,18 @@ Description: ${boardContent.description}
 Main themes: ${boardContent.pins.join(', ')}
 Popular hashtags: ${boardContent.hashtags.join(', ')}
 
-And the user's creative twist: "${twistPrompt}"
+Project Goal: "${projectGoal}"
+Creative Twist: "${creativeTwist}"
+${imageText ? `Text to include: "${imageText}"` : ''}
+${visualStyle ? `Visual Style/Constraints: "${visualStyle}"` : ''}
 
-Generate 4 unique image ideas that blend the board's aesthetic with the user's input.
+Generate 4 unique image ideas that blend the board's aesthetic with the project goals and creative direction.
 
 For each idea, provide:
 1. A vivid image generation prompt (max 30 words) that will work well with DALL-E 3
 2. A catchy pin title (max 8 words)
 3. A poetic description (max 25 words)
-4. 3-5 relevant hashtags
+4. 2-3 relevant hashtags
 
 IMPORTANT: You must respond with a valid JSON object containing a "pins" array with exactly 4 objects. Each object must have these exact fields:
 {
@@ -78,19 +81,26 @@ IMPORTANT: You must respond with a valid JSON object containing a "pins" array w
   ]
 }
 
+Guidelines for image prompts:
+- If text is provided, specify where it should appear and how it should look
+- Include specific details about composition, lighting, and style
+- Ensure the prompt aligns with the project goals
+- Consider the visual style constraints if provided
+- Make sure the prompt will generate a Pinterest-worthy image
+
 Example response format:
 {
   "pins": [
     {
-      "title": "Neon Retro Wave",
-      "imagePrompt": "Retro typography with neon glow effects, cyberpunk cityscape background",
-      "description": "Where retro meets future in a neon-lit typographic dance",
-      "hashtags": ["#NeonRetro", "#CyberpunkDesign", "#TypographyArt"]
+      "title": "Pastel Memphis Vibes",
+      "imagePrompt": "Festival crowd scene with Memphis-style patterns and pastel gradients, text 'Create Your Future Here' in bold sans-serif with neon outline",
+      "description": "A vibrant festival scene blending retro Memphis patterns with soft pastel gradients",
+      "hashtags": ["#FestivalDesign", "#PastelPop", "#MemphisStyle"]
     }
   ]
 }`;
 
-    const userPrompt = `Generate 4 unique ideas that blend the board's aesthetic with the user's twist. Remember to return a valid JSON object with a "pins" array containing exactly 4 objects.`;
+    const userPrompt = `Generate 4 unique ideas that blend the board's aesthetic with the project goals and creative direction. Remember to return a valid JSON object with a "pins" array containing exactly 4 objects.`;
 
     console.log('Making OpenAI API call for ideas...');
     

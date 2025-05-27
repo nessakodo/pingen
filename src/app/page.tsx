@@ -16,7 +16,11 @@ interface RemixResult {
 
 export default function Home() {
   const [boardUrl, setBoardUrl] = useState('');
-  const [twist, setTwist] = useState('');
+  const [projectGoal, setProjectGoal] = useState('');
+  const [creativeTwist, setCreativeTwist] = useState('');
+  const [imageText, setImageText] = useState('');
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [visualStyle, setVisualStyle] = useState('');
   const [results, setResults] = useState<RemixResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -28,6 +32,10 @@ export default function Home() {
 
   const handleRemix = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!boardUrl || !projectGoal || !creativeTwist) {
+      setError('Please provide all required fields');
+      return;
+    }
     setLoading(true);
     setError(null);
     setResults([]);
@@ -40,7 +48,10 @@ export default function Home() {
         },
         body: JSON.stringify({
           boardUrl,
-          twistPrompt: twist,
+          projectGoal,
+          creativeTwist,
+          imageText,
+          visualStyle: showAdvanced ? visualStyle : undefined,
         }),
       });
 
@@ -87,11 +98,11 @@ export default function Home() {
   };
 
   if (!isMounted) {
-    return null; // or a loading spinner
+    return null;
   }
 
   return (
-    <main className="container mx-auto px-4 py-8 max-w-4xl">
+    <main className="container mx-auto px-4 py-8 max-w-7xl">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -106,10 +117,10 @@ export default function Home() {
       </motion.div>
 
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 mb-8">
-        <div className="space-y-4">
+        <form onSubmit={handleRemix} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Pinterest Board URL
+              Pinterest Board URL *
             </label>
             <input
               type="text"
@@ -117,27 +128,81 @@ export default function Home() {
               onChange={(e) => setBoardUrl(e.target.value)}
               placeholder="https://pin.it/..."
               className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              required
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Your Creative Twist
+              Project Goal *
             </label>
-            <textarea
-              value={twist}
-              onChange={(e) => setTwist(e.target.value)}
-              placeholder="e.g., 'add sunset tones and playful shapes'"
-              className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white h-24"
+            <input
+              type="text"
+              value={projectGoal}
+              onChange={(e) => setProjectGoal(e.target.value)}
+              placeholder="e.g., A summer music festival for Gen Z celebrating creative freedom"
+              className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              required
             />
           </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Creative Twist *
+            </label>
+            <input
+              type="text"
+              value={creativeTwist}
+              onChange={(e) => setCreativeTwist(e.target.value)}
+              placeholder="e.g., Add Memphis-inspired patterns and pastel gradients"
+              className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Text for Images (Optional)
+            </label>
+            <input
+              type="text"
+              value={imageText}
+              onChange={(e) => setImageText(e.target.value)}
+              placeholder="e.g., Create Your Future Here"
+              className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            />
+          </div>
+
+          <div className="pt-2">
+            <button
+              type="button"
+              onClick={() => setShowAdvanced(!showAdvanced)}
+              className="text-sm text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300"
+            >
+              {showAdvanced ? 'Hide Advanced Settings' : 'Show Advanced Settings'}
+            </button>
+          </div>
+
+          {showAdvanced && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Visual Style/Constraints
+              </label>
+              <textarea
+                value={visualStyle}
+                onChange={(e) => setVisualStyle(e.target.value)}
+                placeholder="e.g., Use bold sans-serif type, pastel gradients, and hand-drawn elements"
+                className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white h-24"
+              />
+            </div>
+          )}
 
           {error && (
             <p className="text-red-500 text-sm">{error}</p>
           )}
 
           <button
-            onClick={handleRemix}
+            type="submit"
             disabled={loading}
             className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 px-6 rounded-lg font-medium hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
           >
@@ -153,20 +218,20 @@ export default function Home() {
               </>
             )}
           </button>
-        </div>
+        </form>
       </div>
 
       {results.length > 0 && (
         <div className="space-y-6">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Your Remixed Ideas</h2>
-          <div className="grid gap-6 md:grid-cols-2">
+          <div className="flex gap-6 overflow-x-auto pb-4">
             {results.map((result, index) => (
               <motion.div
                 key={index}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
-                className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden"
+                className="flex-none w-[400px] bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden"
               >
                 {result.imageUrl ? (
                   <div className="relative aspect-square w-full">
