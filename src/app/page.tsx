@@ -77,7 +77,18 @@ export default function Home() {
 
   const downloadImage = async (imageUrl: string, title: string) => {
     try {
-      const response = await fetch(imageUrl);
+      const response = await fetch('/api/download', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ imageUrl }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to download image');
+      }
+
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -89,11 +100,13 @@ export default function Home() {
       document.body.removeChild(a);
     } catch (error) {
       console.error('Error downloading image:', error);
+      setError('Failed to download image. Please try again.');
     }
   };
 
   const shareToPinterest = (imageUrl: string, title: string, description: string) => {
-    const pinterestUrl = `https://pinterest.com/pin/create/button/?url=${encodeURIComponent(window.location.href)}&media=${encodeURIComponent(imageUrl)}&description=${encodeURIComponent(`${title}\n\n${description}`)}`;
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://your-squarespace-site.com';
+    const pinterestUrl = `https://pinterest.com/pin/create/button/?url=${encodeURIComponent(baseUrl)}&media=${encodeURIComponent(imageUrl)}&description=${encodeURIComponent(`${title}\n\n${description}`)}`;
     window.open(pinterestUrl, '_blank');
   };
 
@@ -224,14 +237,14 @@ export default function Home() {
       {results.length > 0 && (
         <div className="space-y-6">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Your Remixed Ideas</h2>
-          <div className="flex gap-6 overflow-x-auto pb-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {results.map((result, index) => (
               <motion.div
                 key={index}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
-                className="flex-none w-[400px] bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden"
+                className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden"
               >
                 {result.imageUrl ? (
                   <div className="relative aspect-square w-full">

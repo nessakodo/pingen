@@ -61,7 +61,7 @@ Creative Twist: "${creativeTwist}"
 ${imageText ? `Text to include: "${imageText}"` : ''}
 ${visualStyle ? `Visual Style/Constraints: "${visualStyle}"` : ''}
 
-Generate 4 unique image ideas that blend the board's aesthetic with the project goals and creative direction.
+Generate 3 unique image ideas that blend the board's aesthetic with the project goals and creative direction.
 
 For each idea, provide:
 1. A vivid image generation prompt (max 30 words) that will work well with DALL-E 3
@@ -69,7 +69,7 @@ For each idea, provide:
 3. A poetic description (max 25 words)
 4. 2-3 relevant hashtags
 
-IMPORTANT: You must respond with a valid JSON object containing a "pins" array with exactly 4 objects. Each object must have these exact fields:
+IMPORTANT: You must respond with a valid JSON object containing a "pins" array with exactly 3 objects. Each object must have these exact fields:
 {
   "pins": [
     {
@@ -100,7 +100,7 @@ Example response format:
   ]
 }`;
 
-    const userPrompt = `Generate 4 unique ideas that blend the board's aesthetic with the project goals and creative direction. Remember to return a valid JSON object with a "pins" array containing exactly 4 objects.`;
+    const userPrompt = `Generate 3 unique ideas that blend the board's aesthetic with the project goals and creative direction. Remember to return a valid JSON object with a "pins" array containing exactly 3 objects.`;
 
     console.log('Making OpenAI API call for ideas...');
     
