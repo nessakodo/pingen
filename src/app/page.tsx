@@ -37,7 +37,7 @@ export default function Home() {
       return;
     }
     setLoading(true);
-    setError(null);
+    setError('');
     setResults([]);
 
     try {
@@ -77,12 +77,15 @@ export default function Home() {
 
   const downloadImage = async (imageUrl: string, title: string) => {
     try {
+      // Sanitize title for filename
+      const filename = `${title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')}.png`;
+
       const response = await fetch('/api/download', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ imageUrl }),
+        body: JSON.stringify({ imageUrl, filename }),
       });
 
       if (!response.ok) {
@@ -93,7 +96,7 @@ export default function Home() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${title.toLowerCase().replace(/\s+/g, '-')}.png`;
+      a.download = filename;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -115,14 +118,14 @@ export default function Home() {
   }
 
   return (
-    <main className="container mx-auto px-4 py-8 max-w-3xl">
+    <main className="container mx-auto px-4 py-12 max-w-3xl">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-center mb-12"
+        className="text-center mb-16"
       >
         <h1 className="text-4xl font-bold mb-4 text-accent">
-          Pingen
+          PinGen
         </h1>
         <p className="text-muted text-lg">
           Instantly Remix Your Inspiration
@@ -186,7 +189,7 @@ export default function Home() {
             <button
               type="button"
               onClick={() => setShowAdvanced(!showAdvanced)}
-              className="text-sm text-muted border border-muted rounded-md px-3 py-1 hover:text-foreground hover:border-foreground transition-colors"
+              className="text-sm text-muted border border-muted rounded-md px-3 py-3 bg-transparent hover:bg-accent hover:text-background transition-colors"
             >
               {showAdvanced ? 'Hide Advanced Settings' : 'Show Advanced Settings'}
             </button>
@@ -231,16 +234,16 @@ export default function Home() {
       </div>
 
       {results.length > 0 && (
-        <div className="space-y-8 mt-12">
+        <div className="space-y-10 mt-16">
           <h2 className="text-2xl font-bold text-foreground text-center">Your Remixed Ideas</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {results.map((result, index) => (
               <motion.div
                 key={index}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
-                className="card overflow-hidden flex flex-col"
+                className="card overflow-hidden flex flex-col hover:scale-[1.02] transition-transform duration-200 ease-in-out"
               >
                 {result.imageUrl ? (
                   <div className="relative aspect-square w-full flex-shrink-0">

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
   try {
-    const { imageUrl } = await request.json();
+    const { imageUrl, filename } = await request.json();
 
     if (!imageUrl) {
       return NextResponse.json(
@@ -19,11 +19,13 @@ export async function POST(request: Request) {
 
     const blob = await response.blob();
     
+    const headers: Record<string, string> = {
+      'Content-Type': 'image/png',
+      'Content-Disposition': filename ? `attachment; filename="${encodeURIComponent(filename)}"` : 'attachment',
+    };
+
     return new NextResponse(blob, {
-      headers: {
-        'Content-Type': 'image/png',
-        'Content-Disposition': 'attachment',
-      },
+      headers,
     });
   } catch (error) {
     console.error('Error in download API:', error);
