@@ -116,7 +116,7 @@ Example response format:
         max_tokens: 1000,
         response_format: { type: "json_object" }
       });
-    } catch (error) {
+    } catch (_error) {
       console.log('gpt-4o failed, falling back to gpt-3.5-turbo');
       completion = await openai.chat.completions.create({
         model: "gpt-3.5-turbo",
@@ -157,8 +157,14 @@ Example response format:
 
     // Generate images for each pin
     console.log('Generating images for pins...');
+    interface PinBeforeImage {
+      title: string;
+      imagePrompt: string;
+      description: string;
+      hashtags: string[];
+    }
     const pinsWithImages = await Promise.all(
-      pins.map(async (pin: any) => {
+      pins.map(async (pin: PinBeforeImage) => {
         try {
           const imageResponse = await openai.images.generate({
             model: "dall-e-3",
