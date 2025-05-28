@@ -116,8 +116,8 @@ Example response format:
         max_tokens: 1000,
         response_format: { type: "json_object" }
       });
-    } catch (_error) {
-      console.log('gpt-4o failed, falling back to gpt-3.5-turbo');
+    } catch (_unusedError) { // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      console.log('gpt-4o failed, falling back to gpt-3.5-turbo', _unusedError);
       completion = await openai.chat.completions.create({
         model: "gpt-3.5-turbo",
         messages: [
@@ -175,10 +175,21 @@ Example response format:
             style: "vivid"
           });
 
-          return {
-            ...pin,
-            imageUrl: imageResponse.data[0].url
-          };
+          // Check if data and data[0] exist before accessing url
+          if (imageResponse.data && imageResponse.data.length > 0 && imageResponse.data[0].url) {
+            return {
+              ...pin,
+              imageUrl: imageResponse.data[0].url
+            };
+          } else {
+            console.error('Image generation returned no data or invalid data format:', imageResponse);
+            return {
+              ...pin,
+              imageUrl: null,
+              imageError: 'Failed to generate image or invalid response'
+            };
+          }
+
         } catch (error) {
           console.error('Error generating image:', error);
           return {
